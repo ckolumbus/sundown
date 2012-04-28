@@ -2447,6 +2447,38 @@ sd_markdown_new(
 
 	return md;
 }
+static size_t 
+sd_markdown_hdridx(size_t start, const uint8_t *document, size_t doc_size)
+{
+    int hdrlines = 0;
+    size_t i = start;
+    while (i < doc_size) /* iterating over lines */
+    {
+        /* stop at first line not starting with '%'  */
+        if (document[i] != '%') break; 
+        else hdrlines++;
+        while (i < doc_size && document[i] != '\n' && document[i] != '\r')
+            i++;
+        i++;
+    }
+    return (hdrlines==3 ? i : start);
+}
+
+int
+sd_markdown_hashdr(const uint8_t *document, size_t doc_size)
+{
+    size_t end, beg = 0;
+    static const char UTF8_BOM[] = {0xEF, 0xBB, 0xBF};
+
+    /* Skip a possible UTF-8 BOM, even though the Unicode standard
+     * discourages having these in UTF-8 documents */
+    if (doc_size >= 3 && memcmp(document, UTF8_BOM, 3) == 0)
+            beg += 3;
+
+    end = sd_markdown_hdridx(beg, document, doc_size);
+
+    return ( (end>beg) ? 1 : 0);
+}
 
 void
 sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, struct sd_markdown *md)
@@ -2475,7 +2507,10 @@ sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, str
 	if (doc_size >= 3 && memcmp(document, UTF8_BOM, 3) == 0)
 		beg += 3;
 
-	while (beg < doc_size) /* iterating over lines */
+        if ( (md->ext_flags & MKDEXT_DOCHEADER) != 0 )
+            beg = sd_markdown_hdridx(beg, document, doc_size);
+        
+        while (beg < doc_size) /* iterating over lines */
 		if (is_ref(document, beg, doc_size, &end, md->refs))
 			beg = end;
 		else { /* skipping to the next line */

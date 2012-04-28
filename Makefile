@@ -29,12 +29,13 @@ SUNDOWN_SRC=\
 	src/stack.o \
 	src/buffer.o \
 	src/autolink.o \
+	html/s5html.o \
 	html/html.o \
 	html/html_smartypants.o \
 	html/houdini_html_e.o \
 	html/houdini_href_e.o
 
-all:		libsundown.so sundown smartypants html_blocks
+all:		libsundown.so sundown smartypants html_blocks sundowns5
 
 .PHONY:		all clean
 
@@ -46,9 +47,15 @@ libsundown.so:	libsundown.so.1
 libsundown.so.1: $(SUNDOWN_SRC)
 	$(CC) $(LDFLAGS) -shared -Wl $^ -o $@
 
+libsundown.a: $(SUNDOWN_SRC)
+	ar rcs $@ $^
+
 # executables
 
 sundown:	examples/sundown.o $(SUNDOWN_SRC)
+	$(CC) $(LDFLAGS) $^ -o $@
+
+sundowns5:	examples/sundowns5.o $(SUNDOWN_SRC)
 	$(CC) $(LDFLAGS) $^ -o $@
 
 smartypants: examples/smartypants.o $(SUNDOWN_SRC)

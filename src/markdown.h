@@ -59,6 +59,7 @@ enum mkd_extensions {
 	MKDEXT_SPACE_HEADERS = (1 << 6),
 	MKDEXT_SUPERSCRIPT = (1 << 7),
 	MKDEXT_LAX_SPACING = (1 << 8),
+	MKDEXT_DOCHEADER = (1 << 9),
 };
 
 /* sd_callbacks - functions for rendering parsed data */
@@ -119,6 +120,9 @@ sd_markdown_new(
 	size_t max_nesting,
 	const struct sd_callbacks *callbacks,
 	void *opaque);
+
+extern int
+sd_markdown_hashdr(const uint8_t *document, size_t doc_size);
 
 extern void
 sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, struct sd_markdown *md);
