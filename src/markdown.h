@@ -130,7 +130,7 @@ sd_markdown_new(
 	void *opaque);
 
 extern int
-sd_markdown_hashdr(const uint8_t *document, size_t doc_size);
+sd_markdown_hashdr(const uint8_t *document, size_t doc_size, struct mkd_fileheader *hdr);
 
 extern void
 sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, struct sd_markdown *md);
@@ -140,6 +140,12 @@ sd_markdown_free(struct sd_markdown *md);
 
 extern void
 sd_version(int *major, int *minor, int *revision);
+
+extern void
+sd_markdown_hdrnew( struct mkd_fileheader *hdr);
+
+extern void
+sd_markdown_hdrfree( struct mkd_fileheader *hdr);
 
 #ifdef __cplusplus
 }

@@ -2526,7 +2526,7 @@ sd_markdown_hdridx(size_t start, const uint8_t *document, size_t doc_size, struc
 }
 
 int
-sd_markdown_hashdr(const uint8_t *document, size_t doc_size)
+sd_markdown_hashdr(const uint8_t *document, size_t doc_size, struct mkd_fileheader *hdr)
 {
     size_t end, beg = 0;
     static const char UTF8_BOM[] = {0xEF, 0xBB, 0xBF};
@@ -2536,9 +2536,29 @@ sd_markdown_hashdr(const uint8_t *document, size_t doc_size)
     if (doc_size >= 3 && memcmp(document, UTF8_BOM, 3) == 0)
             beg += 3;
 
-    end = sd_markdown_hdridx(beg, document, doc_size, NULL);
+    end = sd_markdown_hdridx(beg, document, doc_size, hdr);
 
     return ( (end>beg) ? 1 : 0);
+}
+
+void
+sd_markdown_hdrnew(struct mkd_fileheader* hdr )
+{
+    hdr->title    = bufnew(100);
+    hdr->subtitle = bufnew(100);
+    hdr->author   = bufnew(100);
+    hdr->company  = bufnew(100);
+    hdr->date     = bufnew(100);
+}
+
+void
+sd_markdown_hdrfree(struct mkd_fileheader* hdr )
+{
+    bufrelease(hdr->title);
+    bufrelease(hdr->subtitle);
+    bufrelease(hdr->author);
+    bufrelease(hdr->company);
+    bufrelease(hdr->date);
 }
 
 void
@@ -2551,12 +2571,7 @@ sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, str
 	size_t beg, end;
         struct mkd_fileheader filehdr;
 
-        filehdr.title    = bufnew(100);
-        filehdr.subtitle = bufnew(100);
-        filehdr.author   = bufnew(100);
-        filehdr.company  = bufnew(100);
-        filehdr.date     = bufnew(100);
-        
+        sd_markdown_hdrnew(&filehdr);
 
 	text = bufnew(64);
 	if (!text)
@@ -2623,11 +2638,7 @@ sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, str
 	/* clean-up */
 	bufrelease(text);
 
-        bufrelease(filehdr.title);
-        bufrelease(filehdr.subtitle);
-        bufrelease(filehdr.author);
-        bufrelease(filehdr.company);
-        bufrelease(filehdr.date);
+        sd_markdown_hdrfree(&filehdr);
 
 	free_link_refs(md->refs);
 
