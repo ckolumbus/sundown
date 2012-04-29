@@ -11,6 +11,7 @@ extern "C" {
 struct html_s5_renderopt {
    struct html_renderopt html_options;
    int slideNr;
+   int insideNotes;
 };
 
 extern void
