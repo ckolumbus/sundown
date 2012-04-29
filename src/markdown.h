@@ -59,7 +59,7 @@ enum mkd_extensions {
 	MKDEXT_SPACE_HEADERS = (1 << 6),
 	MKDEXT_SUPERSCRIPT = (1 << 7),
 	MKDEXT_LAX_SPACING = (1 << 8),
-	MKDEXT_DOCHEADER = (1 << 9),
+	MKDEXT_FILEHEADER = (1 << 9),
 };
 
 /* sd_callbacks - functions for rendering parsed data */
@@ -96,7 +96,7 @@ struct sd_callbacks {
 	void (*normal_text)(struct buf *ob, const struct buf *text, void *opaque);
 
 	/* header and footer */
-	void (*doc_header)(struct buf *ob, void *opaque);
+	void (*doc_header)(struct buf *ob, struct buf **filehdr,  void *opaque);
 	void (*doc_footer)(struct buf *ob, void *opaque);
 };
 

@@ -34,6 +34,8 @@
 #define BUFFER_BLOCK 0
 #define BUFFER_SPAN 1
 
+#define FILEHDR_LINES 3
+
 #define MKD_LI_END 8	/* internal list flag */
 
 #define gperf_case_strncmp(s1, s2, n) strncasecmp(s1, s2, n)
@@ -2448,7 +2450,7 @@ sd_markdown_new(
 	return md;
 }
 static size_t 
-sd_markdown_hdridx(size_t start, const uint8_t *document, size_t doc_size)
+sd_markdown_hdridx(size_t start, const uint8_t *document, size_t doc_size, struct buf  **hdr)
 {
     int hdrlines = 0;
     size_t i = start;
@@ -2457,9 +2459,26 @@ sd_markdown_hdridx(size_t start, const uint8_t *document, size_t doc_size)
         /* stop at first line not starting with '%'  */
         if (document[i] != '%') break; 
         else hdrlines++;
-        while (i < doc_size && document[i] != '\n' && document[i] != '\r')
-            i++;
+
+        /* skip % */
         i++;
+
+        /* skip whitespace at beginnng of line */
+        while (i < doc_size && document[i] == ' '  && document[i] != '\n' && document[i] != '\r')
+            i++;
+
+        /* interate of rest of line */
+        while (i < doc_size  && document[i] != '\n' && document[i] != '\r')
+        {
+            /* store line content in buffer */
+            if (hdrlines<= FILEHDR_LINES && hdr != NULL) 
+            {
+                bufputc(hdr[hdrlines-1],document[i]);
+            }
+
+            i++;
+        }
+        i++; /* skip last \n or \r */
     }
     return (hdrlines==3 ? i : start);
 }
@@ -2475,7 +2494,7 @@ sd_markdown_hashdr(const uint8_t *document, size_t doc_size)
     if (doc_size >= 3 && memcmp(document, UTF8_BOM, 3) == 0)
             beg += 3;
 
-    end = sd_markdown_hdridx(beg, document, doc_size);
+    end = sd_markdown_hdridx(beg, document, doc_size, NULL);
 
     return ( (end>beg) ? 1 : 0);
 }
@@ -2488,6 +2507,13 @@ sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, str
 
 	struct buf *text;
 	size_t beg, end;
+        struct buf *filehdr[FILEHDR_LINES];
+
+        {
+            int i;
+            for (i = 0; i<FILEHDR_LINES; i++)
+                filehdr[i] = bufnew(100);
+        }
 
 	text = bufnew(64);
 	if (!text)
@@ -2506,9 +2532,10 @@ sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, str
 	 * discourages having these in UTF-8 documents */
 	if (doc_size >= 3 && memcmp(document, UTF8_BOM, 3) == 0)
 		beg += 3;
-
-        if ( (md->ext_flags & MKDEXT_DOCHEADER) != 0 )
-            beg = sd_markdown_hdridx(beg, document, doc_size);
+        
+        if ( (md->ext_flags & MKDEXT_FILEHEADER) != 0 ) {
+            beg = sd_markdown_hdridx(beg, document, doc_size, filehdr);
+        }
         
         while (beg < doc_size) /* iterating over lines */
 		if (is_ref(document, beg, doc_size, &end, md->refs))
@@ -2537,7 +2564,7 @@ sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, str
 
 	/* second pass: actual rendering */
 	if (md->cb.doc_header)
-		md->cb.doc_header(ob, md->opaque);
+		md->cb.doc_header(ob, filehdr, md->opaque);
 
 	if (text->size) {
 		/* adding a final newline if not already present */
@@ -2552,6 +2579,11 @@ sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, str
 
 	/* clean-up */
 	bufrelease(text);
+        {
+            int i;
+            for (i = 0; i<FILEHDR_LINES; i++)
+                bufrelease(filehdr[i]);
+        }
 	free_link_refs(md->refs);
 
 	assert(md->work_bufs[BUFFER_SPAN].size == 0);
