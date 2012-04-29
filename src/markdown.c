@@ -2522,7 +2522,7 @@ sd_markdown_hdridx(size_t start, const uint8_t *document, size_t doc_size, struc
 
         i++; /* skip last \n or \r */
     }
-    return (hdrlines==3 ? i : start);
+    return (hdrlines==FILEHDR_LINES ? i : start);
 }
 
 int

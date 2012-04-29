@@ -1,5 +1,6 @@
 LIBRARY SUNDOWN
 EXPORTS
+	sdhtml_s5_renderer
 	sdhtml_renderer
 	sdhtml_toc_renderer
 	sdhtml_smartypants
@@ -14,8 +15,10 @@ EXPORTS
 	bufreset
 	bufslurp
 	bufprintf
-	sd_markdown_hashdr
 	sd_markdown_new
 	sd_markdown_render
 	sd_markdown_free
 	sd_version
+	sd_markdown_hashdr
+	sd_markdown_hdrnew
+	sd_markdown_hdrfree
