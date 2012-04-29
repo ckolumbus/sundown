@@ -35,6 +35,7 @@
 #define BUFFER_SPAN 1
 
 #define FILEHDR_LINES 3
+#define FILEHDR_SEP  '%'
 
 #define MKD_LI_END 8	/* internal list flag */
 
@@ -2450,14 +2451,16 @@ sd_markdown_new(
 	return md;
 }
 static size_t 
-sd_markdown_hdridx(size_t start, const uint8_t *document, size_t doc_size, struct buf  **hdr)
+sd_markdown_hdridx(size_t start, const uint8_t *document, size_t doc_size, struct mkd_fileheader *hdr)
 {
     int hdrlines = 0;
     size_t i = start;
+    struct buf *b = NULL;
+
     while (i < doc_size) /* iterating over lines */
     {
         /* stop at first line not starting with '%'  */
-        if (document[i] != '%') break; 
+        if (document[i] != '%')  break; 
         else hdrlines++;
 
         /* skip % */
@@ -2467,17 +2470,56 @@ sd_markdown_hdridx(size_t start, const uint8_t *document, size_t doc_size, struc
         while (i < doc_size && document[i] == ' '  && document[i] != '\n' && document[i] != '\r')
             i++;
 
+        /* select right buffer */
+        if (hdr) {
+            b = NULL;
+            if (hdrlines==1) b = hdr->title;
+            if (hdrlines==2) b = hdr->author;
+            if (hdrlines==3) b = hdr->date;
+
+        }
+
         /* interate of rest of line */
+        int sepFound = 0;
         while (i < doc_size  && document[i] != '\n' && document[i] != '\r')
         {
-            /* store line content in buffer */
-            if (hdrlines<= FILEHDR_LINES && hdr != NULL) 
-            {
-                bufputc(hdr[hdrlines-1],document[i]);
+            if (document[i] == FILEHDR_SEP) {
+                sepFound = 1;
+                break;
             }
+
+            /* store line content in buffer */
+            if (b != NULL)  bufputc(b,document[i]);
 
             i++;
         }
+
+        if (sepFound)
+        {
+            /* reset flag */
+            sepFound = 0;
+
+            /* skip ';' */
+            i++;
+            /* select buffer */
+
+            if (hdr) {
+                if (hdrlines==1) b = hdr->subtitle;
+                if (hdrlines==2) b = hdr->company;
+            }
+            /* skip whitespace at beginnng of line */
+            while (i < doc_size && document[i] == ' '  && document[i] != '\n' && document[i] != '\r')
+                i++;
+
+            /* interate of rest of line */
+            while (i < doc_size  && document[i] != '\n' && document[i] != '\r')
+            {
+                /* store line content in buffer */
+                if (b != NULL) bufputc(b,document[i]);
+                i++;
+            }
+        }
+
         i++; /* skip last \n or \r */
     }
     return (hdrlines==3 ? i : start);
@@ -2507,13 +2549,14 @@ sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, str
 
 	struct buf *text;
 	size_t beg, end;
-        struct buf *filehdr[FILEHDR_LINES];
+        struct mkd_fileheader filehdr;
 
-        {
-            int i;
-            for (i = 0; i<FILEHDR_LINES; i++)
-                filehdr[i] = bufnew(100);
-        }
+        filehdr.title    = bufnew(100);
+        filehdr.subtitle = bufnew(100);
+        filehdr.author   = bufnew(100);
+        filehdr.company  = bufnew(100);
+        filehdr.date     = bufnew(100);
+        
 
 	text = bufnew(64);
 	if (!text)
@@ -2534,7 +2577,7 @@ sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, str
 		beg += 3;
         
         if ( (md->ext_flags & MKDEXT_FILEHEADER) != 0 ) {
-            beg = sd_markdown_hdridx(beg, document, doc_size, filehdr);
+            beg = sd_markdown_hdridx(beg, document, doc_size, &filehdr);
         }
         
         while (beg < doc_size) /* iterating over lines */
@@ -2564,7 +2607,7 @@ sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, str
 
 	/* second pass: actual rendering */
 	if (md->cb.doc_header)
-		md->cb.doc_header(ob, filehdr, md->opaque);
+		md->cb.doc_header(ob, &filehdr, md->opaque);
 
 	if (text->size) {
 		/* adding a final newline if not already present */
@@ -2579,11 +2622,13 @@ sd_markdown_render(struct buf *ob, const uint8_t *document, size_t doc_size, str
 
 	/* clean-up */
 	bufrelease(text);
-        {
-            int i;
-            for (i = 0; i<FILEHDR_LINES; i++)
-                bufrelease(filehdr[i]);
-        }
+
+        bufrelease(filehdr.title);
+        bufrelease(filehdr.subtitle);
+        bufrelease(filehdr.author);
+        bufrelease(filehdr.company);
+        bufrelease(filehdr.date);
+
 	free_link_refs(md->refs);
 
 	assert(md->work_bufs[BUFFER_SPAN].size == 0);

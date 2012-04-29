@@ -62,6 +62,14 @@ enum mkd_extensions {
 	MKDEXT_FILEHEADER = (1 << 9),
 };
 
+struct mkd_fileheader {
+   struct buf *title; 
+   struct buf *subtitle; 
+   struct buf *author; 
+   struct buf *company; 
+   struct buf *date; 
+
+};
 /* sd_callbacks - functions for rendering parsed data */
 struct sd_callbacks {
 	/* block level callbacks - NULL skips the block */
@@ -96,7 +104,7 @@ struct sd_callbacks {
 	void (*normal_text)(struct buf *ob, const struct buf *text, void *opaque);
 
 	/* header and footer */
-	void (*doc_header)(struct buf *ob, struct buf **filehdr,  void *opaque);
+	void (*doc_header)(struct buf *ob, struct mkd_fileheader *filehdr,  void *opaque);
 	void (*doc_footer)(struct buf *ob, void *opaque);
 };
 
