@@ -95,17 +95,6 @@ s5_header(struct buf *ob, const struct buf *text, int level, void *opaque)
             options->slideNr += 1;
         }
 
-        if (level == 5){
-            if  (!options->insideNotes)
-            {
-                bufputs(ob, "<div class=\"notes\">\n");
-                options->insideNotes = 1;
-            }
-        } else if (options->insideNotes) { 
-            bufputs(ob, "</div>\n");
-            options->insideNotes = 0;
-        }
-
 	if (ob->size)
 		bufputc(ob, '\n');
 
@@ -124,11 +113,6 @@ s5_hrule(struct buf *ob, void *opaque)
 {
 	struct html_s5_renderopt *options = opaque;
 	if (ob->size) bufputc(ob, '\n');
-
-        if (options->insideNotes) {
-                options->insideNotes = 0;
-                bufputs(ob, "</div>\n");
-        }
 
         if (options->slideNr > 0) {
                 bufputs(ob, "</div>\n");
@@ -157,10 +141,6 @@ static void
 s5_docfooter(struct buf *ob, void *opaque)
 {
         struct html_s5_renderopt *options = opaque;
-        if (options->insideNotes) {
-                options->insideNotes = 0;
-                bufputs(ob, "</div>\n");
-        }
         if (options->slideNr > 0) {
                 bufputs(ob, "</div>\n");
         }
