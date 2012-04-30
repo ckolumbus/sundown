@@ -1971,8 +1971,49 @@ parse_htmlblock(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t 
 
 	/* the end of the block has been found */
 	work.size = tag_end;
-	if (do_render && rndr->cb.blockhtml)
-		rndr->cb.blockhtml(ob, &work, rndr->opaque);
+
+        if (rndr->ext_flags & MKDEXT_INLINEHTML) {
+            /* CHRIS */
+            size_t beg=1;
+            size_t end=work.size;
+
+            while (beg < work.size && work.data[beg] != '>')
+                        beg += 1;
+            if (work.data[beg] == '>' && work.data[beg+1] == '\n') 
+                beg += 2;
+            else
+                beg = -1;
+
+            if (beg > 0)
+            {
+                while (end > 0 && work.data[end] != '<')
+                            end -= 1;
+                if (work.data[end] == '<' && work.data[end-1] == '\n') 
+                    end -= 1;
+                else
+                    end = -1;
+                    
+            }
+            
+            if (beg<=0 || end<=0)
+                return 0;
+            
+            work.size = beg;
+            if (rndr->cb.blockhtml)
+                rndr->cb.blockhtml(ob, &work, rndr->opaque);
+           
+            parse_block(ob, rndr, work.data+beg, end-beg);
+            
+            work.data += end;
+            work.size = tag_end-end;
+            if (rndr->cb.blockhtml)
+                rndr->cb.blockhtml(ob, &work, rndr->opaque);
+
+        } else {
+
+            if (do_render && rndr->cb.blockhtml)
+                    rndr->cb.blockhtml(ob, &work, rndr->opaque);
+        }
 
 	return tag_end;
 }

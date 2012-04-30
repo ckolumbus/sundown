@@ -60,6 +60,7 @@ enum mkd_extensions {
 	MKDEXT_SUPERSCRIPT = (1 << 7),
 	MKDEXT_LAX_SPACING = (1 << 8),
 	MKDEXT_FILEHEADER = (1 << 9),
+	MKDEXT_INLINEHTML = (1 << 10),
 };
 
 struct mkd_fileheader {
