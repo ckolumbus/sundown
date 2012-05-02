@@ -2497,6 +2497,7 @@ sd_markdown_hdridx(size_t start, const uint8_t *document, size_t doc_size, struc
     int hdrlines = 0;
     size_t i = start;
     struct buf *b = NULL;
+    int sepFound = 0;
 
     while (i < doc_size) /* iterating over lines */
     {
@@ -2521,7 +2522,7 @@ sd_markdown_hdridx(size_t start, const uint8_t *document, size_t doc_size, struc
         }
 
         /* interate of rest of line */
-        int sepFound = 0;
+        sepFound = 0;
         while (i < doc_size  && document[i] != '\n' && document[i] != '\r')
         {
             if (document[i] == FILEHDR_SEP) {

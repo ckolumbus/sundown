@@ -1,6 +1,7 @@
 
 CFLAGS=/O2 /EHsc /I"src/" /I"examples"/ /I"html"/
 CC=cl
+LD=lib
 
 SUNDOWN_SRC=\
 	src\markdown.obj \
@@ -8,17 +9,24 @@ SUNDOWN_SRC=\
 	src\buffer.obj \
 	src\autolink.obj \
 	html\html.obj \
+	html\s5html.obj \
 	html\html_smartypants.obj \
 	html\houdini_html_e.obj \
 	html\houdini_href_e.obj
 
-all: sundown.dll sundown.exe
+all: sundown.dll libsundown.lib sundown.exe sundowns5.exe 
 
 sundown.dll: $(SUNDOWN_SRC) sundown.def
 	$(CC) $(SUNDOWN_SRC) sundown.def /link /DLL $(LDFLAGS) /out:$@
 
-sundown.exe: examples\sundown.obj $(SUNDOWN_SRC)
-	$(CC) examples\sundown.obj $(SUNDOWN_SRC) /link $(LDFLAGS) /out:$@
+libsundown.lib: $(SUNDOWN_SRC)
+	$(LD) $(SUNDOWN_SRC) $(LDFLAGS) /out:$@
+
+sundowns5.exe: examples\sundowns5.obj libsundown.lib
+	$(CC) examples\sundowns5.obj libsundown.lib /link $(LDFLAGS) /out:$@
+
+sundown.exe: examples\sundown.obj libsundown.lib
+	$(CC) examples\sundown.obj libsundown.lib /link $(LDFLAGS) /out:$@
 
 # housekeeping
 clean:

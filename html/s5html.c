@@ -28,7 +28,7 @@
 
 
 const char* s5header = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \n\
-	\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n\
+    \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n\
 \n\
 <html xmlns=\"http://www.w3.org/1999/xhtml\">\n\
 \n\
@@ -85,7 +85,7 @@ const char* s5footer=" \
 static void
 s5_header(struct buf *ob, const struct buf *text, int level, void *opaque)
 {
-	struct html_s5_renderopt *options = opaque;
+        struct html_s5_renderopt *options = (struct html_s5_renderopt*) opaque;
 
         if (level == 1){
             if (options->slideNr > 0) {
@@ -95,24 +95,24 @@ s5_header(struct buf *ob, const struct buf *text, int level, void *opaque)
             options->slideNr += 1;
         }
 
-	if (ob->size)
-		bufputc(ob, '\n');
+        if (ob->size)
+            bufputc(ob, '\n');
 
-	if (options->html_options.flags & HTML_TOC)
-		bufprintf(ob, "<h%d id=\"toc_%d\">", level, options->html_options.toc_data.header_count++);
-	else
-		bufprintf(ob, "<h%d>", level);
+        if (options->html_options.flags & HTML_TOC)
+            bufprintf(ob, "<h%d id=\"toc_%d\">", level, options->html_options.toc_data.header_count++);
+        else
+            bufprintf(ob, "<h%d>", level);
 
-	if (text) bufput(ob, text->data, text->size);
-	bufprintf(ob, "</h%d>\n", level);
+        if (text) bufput(ob, text->data, text->size);
+        bufprintf(ob, "</h%d>\n", level);
 }
 
 
 static void
 s5_hrule(struct buf *ob, void *opaque)
 {
-	struct html_s5_renderopt *options = opaque;
-	if (ob->size) bufputc(ob, '\n');
+        struct html_s5_renderopt *options = (struct html_s5_renderopt *) opaque;
+        if (ob->size) bufputc(ob, '\n');
 
         if (options->slideNr > 0) {
                 bufputs(ob, "</div>\n");
@@ -124,27 +124,33 @@ s5_hrule(struct buf *ob, void *opaque)
 static void
 s5_docheader(struct buf *ob, struct mkd_fileheader *filehdr, void *opaque)
 {
+        extern const char* s5header;
         //struct html_renderopt *options = opaque;
         if (filehdr == NULL)
         {
-	    bufprintf(ob, s5header, "","","","","", "");
+        bufprintf(ob, s5header, "","","","","", "");
             bufprintf(ob, s5titleslide, "","","", "");
         } else 
         {
-            bufprintf(ob, s5header, bufcstr(filehdr->author), bufcstr(filehdr->company), bufcstr(filehdr->date), 
-                                    bufcstr(filehdr->title), bufcstr(filehdr->author), bufcstr(filehdr->date));
-            bufprintf(ob, s5titleslide, bufcstr(filehdr->title), bufcstr(filehdr->subtitle) , bufcstr(filehdr->author), bufcstr(filehdr->company));
+            const char * title    = bufcstr(filehdr->title);
+            const char * subtitle = bufcstr(filehdr->subtitle);
+            const char * author   = bufcstr(filehdr->author);
+            const char * company  = bufcstr(filehdr->company);
+            const char * date     = bufcstr(filehdr->date);
+
+            bufprintf(ob, s5header, author, company, date, title, author, date);
+            bufprintf(ob, s5titleslide, title, subtitle, author,filehdr->company);
         }
 }
 
 static void
 s5_docfooter(struct buf *ob, void *opaque)
 {
-        struct html_s5_renderopt *options = opaque;
+        struct html_s5_renderopt *options = (struct html_s5_renderopt*) opaque;
         if (options->slideNr > 0) {
                 bufputs(ob, "</div>\n");
         }
-	bufputs(ob, s5footer );
+        bufputs(ob, s5footer );
 }
 
 
@@ -152,9 +158,9 @@ void
 sdhtml_s5_renderer(struct sd_callbacks *callbacks, struct html_s5_renderopt *options, unsigned int render_flags)
 {
         sdhtml_renderer(callbacks, (struct html_renderopt*)options, render_flags);
-	callbacks->header     = s5_header;
-	callbacks->hrule      = s5_hrule;
-	callbacks->doc_header  = s5_docheader;
-	callbacks->doc_footer  = s5_docfooter;
+        callbacks->header     = s5_header;
+        callbacks->hrule      = s5_hrule;
+        callbacks->doc_header  = s5_docheader;
+        callbacks->doc_footer  = s5_docfooter;
         options->slideNr = 0;
 }

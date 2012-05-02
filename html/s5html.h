@@ -21,9 +21,5 @@ sdhtml_s5_renderer(struct sd_callbacks *callbacks, struct html_s5_renderopt *opt
 }
 #endif
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif
 
