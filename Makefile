@@ -71,8 +71,7 @@ src/html_blocks.h: html_block_names.txt
 # housekeeping
 clean:
 	rm -f src/*.o html/*.o examples/*.o
-	rm -f libsundown.so libsundown.so.1 sundown smartypants
-	rm -f sundown.exe smartypants.exe
+	rm -f libsundown.a libsundown.so libsundown.so.1 sundwon sundowns5 smartypants
 	rm -rf $(DEPDIR)
 
 
