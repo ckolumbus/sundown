@@ -18,6 +18,7 @@
 
 #include "markdown.h"
 #include "s5html.h"
+#include "houdini.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -79,6 +80,41 @@ const char* s5footer=" \
 </div> \n\
 </body> \n\
 </html> \n";
+
+
+static inline void escape_html(struct buf *ob, const uint8_t *source, size_t length)
+{
+	houdini_escape_html0(ob, source, length, 0);
+}
+
+static inline void escape_href(struct buf *ob, const uint8_t *source, size_t length)
+{
+	houdini_escape_href(ob, source, length);
+}
+static int
+print_link_wxh(struct buf *ob, const struct buf *link) {
+	size_t eq, ex, end;
+	eq = link->size - 1;
+	while (eq > 0 && (link->data[eq - 1] != ' ' || link->data[eq] != '='))
+		eq -= 1;
+	if (eq <= 0) return 0;
+	ex = eq + 1;
+	while (ex < link->size
+	&& link->data[ex] >= '0' && link->data[ex] <= '9')
+		ex += 1;
+	if (ex >= link->size || ex == eq + 1 || link->data[ex] != 'x') return 0;
+	end = ex + 1;
+	while (end < link->size
+	&& link->data[end] >= '0' && link->data[end] <= '9')
+		end += 1;
+	if (end == ex + 1) return 0;
+	/* everything is fine, proceeding to actual printing */
+	escape_html(ob, link->data, eq - 1);
+	BUFPUTSL(ob, "\" width=\"");
+	bufput(ob, link->data + eq + 1, ex - eq - 1);
+	BUFPUTSL(ob, "\" height=\"");
+	bufput(ob, link->data + ex + 1, end - ex - 1);
+	return 1; }
 
 
 
@@ -153,6 +189,27 @@ s5_docfooter(struct buf *ob, void *opaque)
         bufputs(ob, s5footer );
 }
 
+static int
+s5_image(struct buf *ob, const struct buf *link, const struct buf *title, const struct buf *alt, void *opaque)
+{
+	struct html_renderopt *options = opaque;
+	if (!link || !link->size) return 0;
+
+	BUFPUTSL(ob, "<img src=\"");
+	if (!print_link_wxh(ob, link)) {
+		escape_html(ob, link->data, link->size);
+		bufputc(ob, '"'); }
+	BUFPUTSL(ob, "\" alt=\"");
+	if (alt && alt->size)
+		escape_html(ob, alt->data, alt->size);
+
+	if (title && title->size) {
+		BUFPUTSL(ob, "\" title=\"");
+		escape_html(ob, title->data, title->size); }
+
+	bufputs(ob, USE_XHTML(options) ? "\"/>" : "\">");
+	return 1;
+}
 
 void
 sdhtml_s5_renderer(struct sd_callbacks *callbacks, struct html_s5_renderopt *options, unsigned int render_flags)
@@ -160,7 +217,8 @@ sdhtml_s5_renderer(struct sd_callbacks *callbacks, struct html_s5_renderopt *opt
         sdhtml_renderer(callbacks, (struct html_renderopt*)options, render_flags);
         callbacks->header     = s5_header;
         callbacks->hrule      = s5_hrule;
-        callbacks->doc_header  = s5_docheader;
-        callbacks->doc_footer  = s5_docfooter;
+        callbacks->doc_header = s5_docheader;
+        callbacks->doc_footer = s5_docfooter;
+        callbacks->image      = s5_image;
         options->slideNr = 0;
 }

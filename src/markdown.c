@@ -1900,7 +1900,6 @@ parse_htmlblock(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t 
 	size_t i, j = 0, tag_end;
 	const char *curtag = NULL;
 	struct buf work = { data, 0, 0, 0 };
-        char buf[1024];
 
 	/* identification of the opening tag */
 	if (size < 2 || data[0] != '<')
@@ -2005,7 +2004,7 @@ parse_htmlblock(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t 
             if (rndr->cb.blockhtml)
                 rndr->cb.blockhtml(ob, &work, rndr->opaque);
          
-            if (0) {
+            /* {
                 char b1[1024]; 
                 char b2[1024]; 
                 char b3[1024]; 
@@ -2024,6 +2023,7 @@ parse_htmlblock(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t 
                 printf("parse XX-%s-XX, %i \n", b2,s2);
                 printf("b2 XX-%s-XX, %i \n", b3,s3);
             }
+            */
             parse_block(ob, rndr, work.data+beg, end-beg);
             
             work.data += end;
