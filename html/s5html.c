@@ -91,9 +91,58 @@ static inline void escape_href(struct buf *ob, const uint8_t *source, size_t len
 {
 	houdini_escape_href(ob, source, length);
 }
+
+#if 0
+static int
+print_link_wxhx(struct buf *ob, const struct buf *link) {
+	size_t eq, ex, end;
+	size_t cl, cl_end;
+        ex = end = cl_end = -1;
+	eq = link->size - 1;
+	cl = link->size - 1;
+	while (eq > 0 && link->data[eq] != '=')
+		eq -= 1;
+	while (cl > 0 && link->data[cl] != ':')
+		cl -= 1;
+
+	if (eq > 0)
+        {
+            ex = eq + 1;
+            while (ex < link->size
+            && link->data[ex] >= '0' && link->data[ex] <= '9')
+                    ex += 1;
+            if (ex >= link->size || ex == eq + 1 || link->data[ex] != 'x') return 0;
+            end = ex + 1;
+            while (end < link->size
+            && link->data[end] >= '0' && link->data[end] <= '9')
+                    end += 1;
+        }
+	/* everything is fine, proceeding to actual printing */
+        if (cl > 0)
+        {
+            cl_end = cl+1;
+            while (cl < link->size
+            && link->data[cl] != ' ' && link->data[cl] != ')')
+                cl += 1;
+        }
+	escape_html(ob, link->data, eq - 1);
+        /*if (cl_end > cl + 1) {
+            BUFPUTSL(ob, "\" class=\"");
+            bufput(ob, link->data + cl + 1, cl_end - cl - 1);
+        }*/
+        if (end > ex + 1) {
+            BUFPUTSL(ob, "\" width=\"");
+            bufput(ob, link->data + eq + 1, ex - eq - 1);
+            BUFPUTSL(ob, "\" height=\"");
+            bufput(ob, link->data + ex + 1, end - ex - 1);
+        }
+	return 1; }
+#endif
+
 static int
 print_link_wxh(struct buf *ob, const struct buf *link) {
 	size_t eq, ex, end;
+	size_t cl, cl_end;
 	eq = link->size - 1;
 	while (eq > 0 && (link->data[eq - 1] != ' ' || link->data[eq] != '='))
 		eq -= 1;
@@ -107,16 +156,36 @@ print_link_wxh(struct buf *ob, const struct buf *link) {
 	while (end < link->size
 	&& link->data[end] >= '0' && link->data[end] <= '9')
 		end += 1;
-	if (end == ex + 1) return 0;
+
+	cl = link->size - 1;
+	while (cl > 0 && (link->data[cl - 1] != ' ' || link->data[cl] != ':'))
+		cl -= 1;
+        cl_end = cl+1;
+        if (cl > 0)
+        {
+            while (cl_end < link->size
+            && link->data[cl_end] != ' ' && link->data[cl_end] != ')')
+                cl_end += 1;
+        }
+	
 	/* everything is fine, proceeding to actual printing */
-	escape_html(ob, link->data, eq - 1);
-	BUFPUTSL(ob, "\" width=\"");
-	bufput(ob, link->data + eq + 1, ex - eq - 1);
-	BUFPUTSL(ob, "\" height=\"");
-	bufput(ob, link->data + ex + 1, end - ex - 1);
+        if (eq < cl)
+     	    escape_html(ob, link->data, eq - 1);
+        else
+     	    escape_html(ob, link->data, cl - 1);
+
+        if (cl_end > cl +1) {
+            BUFPUTSL(ob, "\" class=\"");
+            bufput(ob, link->data + cl + 1, cl_end - cl - 1);
+        }
+
+	if (end > ex + 1) {
+            BUFPUTSL(ob, "\" width=\"");
+            bufput(ob, link->data + eq + 1, ex - eq - 1);
+            BUFPUTSL(ob, "\" height=\"");
+            bufput(ob, link->data + ex + 1, end - ex - 1);
+        }
 	return 1; }
-
-
 
 static void
 s5_header(struct buf *ob, const struct buf *text, int level, void *opaque)

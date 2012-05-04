@@ -4,7 +4,7 @@
 
 # Heading
 
-![example](t1.jpg)
+![example](t1.jpg :fleft =100x200)
 
 dakfajds kldasfjasdasdf klasdfjadfs
 dfkasdfjlkk
