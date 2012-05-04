@@ -1436,9 +1436,9 @@ parse_paragraph(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t 
 	while (i < size) {
 		for (end = i + 1; end < size && data[end - 1] != '\n'; end++) /* empty */;
 
-		if (is_empty(data + i, size - i))
+		if (is_empty(data + i, size - i)) {
 			break;
-
+                }
 		if ((level = is_headerline(data + i, size - i)) != 0)
 			break;
 
@@ -1490,8 +1490,10 @@ parse_paragraph(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t 
 	if (!level) {
 		struct buf *tmp = rndr_newbuf(rndr, BUFFER_BLOCK);
 		parse_inline(tmp, rndr, work.data, work.size);
-		if (rndr->cb.paragraph)
+		if ( rndr->cb.paragraph && work.data[0] != '<'){
 			rndr->cb.paragraph(ob, tmp, rndr->opaque);
+                } else  if (rndr->cb.blockhtml)
+                        rndr->cb.blockhtml(ob, &work, rndr->opaque);
 		rndr_popbuf(rndr, BUFFER_BLOCK);
 	} else {
 		struct buf *header_work;
@@ -1898,7 +1900,10 @@ parse_htmlblock(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t 
 	size_t i, j = 0, tag_end;
 	const char *curtag = NULL;
 	struct buf work = { data, 0, 0, 0 };
-
+        char buf[1024];
+        strncpy(buf, data, size);
+        buf[size] = '\0';
+printf("HTMLBLOCK XX-%s-XX\n");
 	/* identification of the opening tag */
 	if (size < 2 || data[0] != '<')
 		return 0;
@@ -2001,8 +2006,26 @@ parse_htmlblock(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t 
             work.size = beg;
             if (rndr->cb.blockhtml)
                 rndr->cb.blockhtml(ob, &work, rndr->opaque);
-          
-            /*printf("parse : %s, %i %i\n", work.data , beg, end);*/
+         
+            {
+                char b1[1024]; 
+                char b2[1024]; 
+                char b3[1024]; 
+
+                int s1 = beg;
+                int s2 = end-beg;
+                int s3 = tag_end-end;
+
+                strncpy(b1, work.data, s1);
+                strncpy(b2, work.data+beg, s2);
+                strncpy(b3, work.data+end, s3);
+                b1[s1] = '\0';
+                b2[s2] = '\0';
+                b3[s3] = '\0';
+                printf("b1 XX-%s-XX, %i \n", b1, s1);
+                printf("parse XX-%s-XX, %i \n", b2,s2);
+                printf("b2 XX-%s-XX, %i \n", b3,s3);
+            }
             parse_block(ob, rndr, work.data+beg, end-beg);
             
             work.data += end;
@@ -2244,7 +2267,9 @@ parse_block(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t size
 
 		else if (data[beg] == '<' && rndr->cb.blockhtml &&
 				(i = parse_htmlblock(ob, rndr, txt_data, end, 1)) != 0)
-			beg += i;
+                {
+                            printf("BLOCK\n");
+			beg += i;}
 
 		else if ((i = is_empty(txt_data, end)) != 0)
 			beg += i;
