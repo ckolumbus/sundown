@@ -35,7 +35,6 @@
 #define BUFFER_SPAN 1
 
 #define FILEHDR_LINES 3
-#define FILEHDR_SEP  '%'
 
 #define MKD_LI_END 8	/* internal list flag */
 
@@ -1979,19 +1978,20 @@ parse_htmlblock(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t 
 
             while (beg < work.size && work.data[beg] != '>')
                         beg += 1;
-            if (work.data[beg] == '>' && work.data[beg+1] == '\n') 
+            beg++;
+            /*if (work.data[beg] == '>' && work.data[beg+1] == '\n') 
                 beg += 2;
             else
-                beg = -1;
+                beg = -1; */
 
             if (beg > 0)
             {
                 while (end > 0 && work.data[end] != '<')
                             end -= 1;
-                if (work.data[end] == '<' && work.data[end-1] == '\n') 
+                /*if (work.data[end] == '<' && work.data[end-1] == '\n') 
                     end -= 1;
                 else
-                    end = -1;
+                    end = -1;*/
                     
             }
             
@@ -2001,7 +2001,8 @@ parse_htmlblock(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t 
             work.size = beg;
             if (rndr->cb.blockhtml)
                 rndr->cb.blockhtml(ob, &work, rndr->opaque);
-           
+          
+            /*printf("parse : %s, %i %i\n", work.data , beg, end);*/
             parse_block(ob, rndr, work.data+beg, end-beg);
             
             work.data += end;
@@ -2525,41 +2526,10 @@ sd_markdown_hdridx(size_t start, const uint8_t *document, size_t doc_size, struc
         sepFound = 0;
         while (i < doc_size  && document[i] != '\n' && document[i] != '\r')
         {
-            if (document[i] == FILEHDR_SEP) {
-                sepFound = 1;
-                break;
-            }
-
             /* store line content in buffer */
             if (b != NULL)  bufputc(b,document[i]);
 
             i++;
-        }
-
-        if (sepFound)
-        {
-            /* reset flag */
-            sepFound = 0;
-
-            /* skip ';' */
-            i++;
-            /* select buffer */
-
-            if (hdr) {
-                if (hdrlines==1) b = hdr->subtitle;
-                if (hdrlines==2) b = hdr->company;
-            }
-            /* skip whitespace at beginnng of line */
-            while (i < doc_size && document[i] == ' '  && document[i] != '\n' && document[i] != '\r')
-                i++;
-
-            /* interate of rest of line */
-            while (i < doc_size  && document[i] != '\n' && document[i] != '\r')
-            {
-                /* store line content in buffer */
-                if (b != NULL) bufputc(b,document[i]);
-                i++;
-            }
         }
 
         i++; /* skip last \n or \r */
@@ -2579,7 +2549,6 @@ sd_markdown_hashdr(const uint8_t *document, size_t doc_size, struct mkd_filehead
             beg += 3;
 
     end = sd_markdown_hdridx(beg, document, doc_size, hdr);
-
     return ( (end>beg) ? 1 : 0);
 }
 
@@ -2587,9 +2556,7 @@ void
 sd_markdown_hdrnew(struct mkd_fileheader* hdr )
 {
     hdr->title    = bufnew(100);
-    hdr->subtitle = bufnew(100);
     hdr->author   = bufnew(100);
-    hdr->company  = bufnew(100);
     hdr->date     = bufnew(100);
 }
 
@@ -2597,9 +2564,7 @@ void
 sd_markdown_hdrfree(struct mkd_fileheader* hdr )
 {
     bufrelease(hdr->title);
-    bufrelease(hdr->subtitle);
     bufrelease(hdr->author);
-    bufrelease(hdr->company);
     bufrelease(hdr->date);
 }
 

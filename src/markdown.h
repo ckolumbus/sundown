@@ -65,9 +65,7 @@ enum mkd_extensions {
 
 struct mkd_fileheader {
    struct buf *title; 
-   struct buf *subtitle; 
    struct buf *author; 
-   struct buf *company; 
    struct buf *date; 
 
 };

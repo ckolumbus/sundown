@@ -133,13 +133,13 @@ s5_docheader(struct buf *ob, struct mkd_fileheader *filehdr, void *opaque)
         } else 
         {
             const char * title    = bufcstr(filehdr->title);
-            const char * subtitle = bufcstr(filehdr->subtitle);
+            const char * subtitle = "";
             const char * author   = bufcstr(filehdr->author);
-            const char * company  = bufcstr(filehdr->company);
+            const char * company  = "";
             const char * date     = bufcstr(filehdr->date);
 
             bufprintf(ob, s5header, author, company, date, title, author, date);
-            bufprintf(ob, s5titleslide, title, subtitle, author,filehdr->company);
+            bufprintf(ob, s5titleslide, title, subtitle, author, company);
         }
 }
 
