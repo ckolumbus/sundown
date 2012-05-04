@@ -1901,9 +1901,7 @@ parse_htmlblock(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t 
 	const char *curtag = NULL;
 	struct buf work = { data, 0, 0, 0 };
         char buf[1024];
-        strncpy(buf, data, size);
-        buf[size] = '\0';
-printf("HTMLBLOCK XX-%s-XX\n");
+
 	/* identification of the opening tag */
 	if (size < 2 || data[0] != '<')
 		return 0;
@@ -2007,7 +2005,7 @@ printf("HTMLBLOCK XX-%s-XX\n");
             if (rndr->cb.blockhtml)
                 rndr->cb.blockhtml(ob, &work, rndr->opaque);
          
-            {
+            if (0) {
                 char b1[1024]; 
                 char b2[1024]; 
                 char b3[1024]; 
@@ -2267,9 +2265,7 @@ parse_block(struct buf *ob, struct sd_markdown *rndr, uint8_t *data, size_t size
 
 		else if (data[beg] == '<' && rndr->cb.blockhtml &&
 				(i = parse_htmlblock(ob, rndr, txt_data, end, 1)) != 0)
-                {
-                            printf("BLOCK\n");
-			beg += i;}
+			beg += i;
 
 		else if ((i = is_empty(txt_data, end)) != 0)
 			beg += i;
